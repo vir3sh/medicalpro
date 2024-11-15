@@ -167,16 +167,26 @@ router.get('/doctors', async (req, res) => {
 // Register and Login routes for Doctor
 // Doctor Registration
 router.post('/doctors/register', upload.single('profilePicture'), async (req, res) => {
-  const { name, specialty, email, phone, yearsOfExperience, password } = req.body;
+  const { name, specialty, email, phone, yearsOfExperience, password, profilePictureURL } = req.body;
 
   try {
+    // Check if a doctor already exists with the provided email or phone
     const existingDoctor = await Doctor.findOne({ $or: [{ email }, { phone }] });
     if (existingDoctor) {
       return res.status(400).json({ message: 'Doctor already exists' });
     }
 
+    // Determine the profile picture to use (file upload takes priority)
+    let profilePicture = null;
+    if (req.file) {
+      profilePicture = req.file.path; // Use uploaded file path
+    } else if (profilePictureURL) {
+      profilePicture = profilePictureURL; // Use provided URL
+    }
+
+    // Create a new doctor instance
     const doctor = new Doctor({
-      profilePicture: req.file ? req.file.path : null,
+      profilePicture,
       name,
       specialty,
       email,
@@ -185,9 +195,12 @@ router.post('/doctors/register', upload.single('profilePicture'), async (req, re
       password,
     });
 
+    // Save doctor to the database
     await doctor.save();
+
     res.status(201).json({ message: 'Doctor added successfully', doctor });
   } catch (error) {
+    console.error('Error registering doctor:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 });
