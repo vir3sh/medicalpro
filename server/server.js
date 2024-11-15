@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const path = require('path');
+const bcrypt = require('bcryptjs'); 
 const Patient = require('./models/Patient');  // Correct the import from Doctor to Patient
 const Doctor = require('./models/Doctor');  // Import Doctor model
 const jwt = require('jsonwebtoken');
@@ -146,19 +147,36 @@ router.post('/doctors/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Find the doctor by email
     const doctor = await Doctor.findOne({ email });
+
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
-    const isMatch = await doctor.comparePassword(password);
+    // Compare passwords (using bcrypt if you hashed the password)
+    const isMatch = await bcrypt.compare(password, doctor.password);
+
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid password' });
     }
 
-    res.status(200).json({ message: 'Login successful', doctor });
+    // Create and send a JWT token
+    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({
+      message: 'Login successful',
+      token, // Include the JWT token in the response
+      doctor: {
+        id: doctor._id,
+        name: doctor.name,
+        email: doctor.email,
+        profilePicture: doctor.profilePicture, // If you have a profile picture
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error(error); // Log the error for debugging
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
