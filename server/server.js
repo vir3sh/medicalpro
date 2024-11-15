@@ -420,6 +420,38 @@ app.post('/api/messages/reply/:messageId', async (req, res) => {
     res.status(500).send('Failed to send reply');
   }
 });
+// Example backend endpoint to get replies for a specific patient
+app.get('/api/messages/replies/patient/:patientId', async (req, res) => {
+  const { patientId } = req.params; // Get the patientId from the request parameters
+
+  try {
+    // Find the patient by ID and populate the replies
+    const patient = await Patient.findById(patientId).populate('replies.doctorId', 'name'); // Populate doctorId with doctor's name
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Check if the patient has any replies
+    if (patient.replies.length === 0) {
+      return res.status(404).json({ message: 'No replies found for this patient' });
+    }
+
+    // Format and return the replies
+    const formattedReplies = patient.replies.map(reply => ({
+      doctorName: reply.doctorId.name, // Doctor's name
+      careToBeTaken: reply.careToBeTaken,
+      medicines: reply.medicines,
+      replyDate: reply.replyDate,
+    }));
+
+    res.json(formattedReplies); // Send the replies as a response
+  } catch (error) {
+    console.error('Error fetching replies:', error);
+    res.status(500).json({ message: 'Failed to fetch replies' });
+  }
+});
+
 
 
 
