@@ -242,6 +242,40 @@ app.post('/api/consultations', async (req, res) => {
   }
 });
 
+router.post('/doctors/login', async (req, res) => {
+  const { email, password } = req.body;
+  console.log('Login request received:', { email, password }); // Log the request data
+  try {
+    const doctor = await Doctor.findOne({ email });
+
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, doctor.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      doctor: {
+        id: doctor._id,
+        name: doctor.name,
+        email: doctor.email,
+        profilePicture: doctor.profilePicture,
+      },
+    });
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 
 // Use the routes
 app.use('/api', router); // Apply the routes to /api path
