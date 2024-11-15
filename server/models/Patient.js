@@ -1,4 +1,3 @@
-// models/patient.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -11,7 +10,17 @@ const patientSchema = new mongoose.Schema({
   historyOfSurgery: { type: String, required: true },
   historyOfIllness: { type: String, required: true },
   password: { type: String, required: true },
+  replies: [
+    {
+      doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' },
+      careToBeTaken: String,
+      medicines: String,
+      replyDate: Date,
+      messageId: String,
+    },
+  ],
 });
+
 
 // Encrypt the patient's password before saving
 patientSchema.pre('save', async function (next) {

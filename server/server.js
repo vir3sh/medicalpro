@@ -378,6 +378,49 @@ app.post('/api/consultations/:doctorId', async (req, res) => {
   }
 });
 
+// Example backend endpoint
+app.post('/api/messages/reply/:messageId', async (req, res) => {
+  const { messageId } = req.params;
+  const { careToBeTaken, medicines, replyDate, patientId, doctorId } = req.body;
+
+  try {
+    // Find the message by ID
+    const message = await Message.findById(messageId);
+    if (!message) return res.status(404).send('Message not found');
+
+    // Prepare the reply object
+    const replyData = {
+      careToBeTaken,
+      medicines,
+      replyDate,
+      doctorId,
+    };
+
+    // Save the reply to the message
+    message.reply = replyData;
+    await message.save();
+
+    // Find the patient by ID and save the reply to their record
+    const patient = await Patient.findById(patientId);
+    if (!patient) return res.status(404).send('Patient not found');
+
+    if (!patient.replies) {
+      patient.replies = []; // Ensure the replies array exists
+    }
+    patient.replies.push({
+      ...replyData,
+      messageId, // Keep track of which message this reply corresponds to
+    });
+
+    await patient.save(); // Save the updated patient record
+
+    res.status(200).send('Reply sent and saved to patient record successfully');
+  } catch (error) {
+    console.error('Error sending reply:', error);
+    res.status(500).send('Failed to send reply');
+  }
+});
+
 
 
 // Use the routes
