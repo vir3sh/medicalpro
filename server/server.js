@@ -114,6 +114,15 @@ router.post('/login', async (req, res) => {
   }
 });
 
+
+router.get('/doctors', async (req, res) => {
+  try {
+    const doctors = await Doctor.find(); // Fetch all doctors from the database
+    res.status(200).json(doctors); // Send the list of doctors
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
 // Register and Login routes for Doctor
 // Doctor Registration
 router.post('/doctors/register', upload.single('profilePicture'), async (req, res) => {
@@ -179,6 +188,60 @@ router.post('/doctors/login', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+
+router.get('/doctors/:doctorId', async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.params.doctorId); // Replace with your DB lookup
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+    res.json(doctor); // Return doctor details
+  } catch (error) {
+    console.error('Error fetching doctor:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+app.post('/api/consultations', async (req, res) => {
+  const {
+    doctorId,
+    patientName,
+    appointmentDate,
+    symptoms,
+    illnessHistory,
+    recentSurgery,
+    diabetes,
+    allergies,
+    others,
+  } = req.body;
+
+  try {
+    // Assuming you have a Consultation model to save data
+    const consultation = new Consultation({
+      doctorId,
+      patientName,
+      appointmentDate,
+      symptoms,
+      illnessHistory,
+      recentSurgery,
+      diabetes,
+      allergies,
+      others,
+    });
+
+    // Save the consultation data to the database
+    await consultation.save();
+
+    // Respond with a success message
+    res.status(201).json({ message: 'Consultation created successfully', consultation });
+  } catch (error) {
+    console.error('Error saving consultation:', error);
+    res.status(500).json({ message: 'Failed to create consultation' });
+  }
+});
+
 
 // Use the routes
 app.use('/api', router); // Apply the routes to /api path
